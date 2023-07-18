@@ -30,7 +30,7 @@ RUN apt update && apt install -y --no-install-recommends gnupg2 curl ca-certific
     apt-get purge --autoremove -y curl
 
 ENV CUDA_VERSION 11.0.3
-
+# 11.8
 # Smaller cuda install than cuda-libraries-11-0 removes: libnpp-11-0, libnvjpeg-11-0.
 RUN apt update && apt install -y --no-install-recommends \
     cuda-cudart-11-0 \

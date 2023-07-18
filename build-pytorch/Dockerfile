@@ -1,5 +1,5 @@
-FROM nvidia/cuda:11.0-devel-ubuntu18.04
-ARG PYTHON_VERSION=3.7
+FROM nvidia/cuda:11.8.0-devel-ubuntu18.04
+ARG PYTHON_VERSION=3.11
 ARG WITH_TORCHVISION=0
 
 # Some dependencies
@@ -20,7 +20,7 @@ ENV PATH /opt/conda/bin:$PATH
 RUN apt-get remove -y libnccl-dev libnccl2 libnpp-11-0 --allow-change-held-packages
 
 # Need v1.7.1
-RUN git clone -b 'v1.7.1' --single-branch --depth 1 https://github.com/pytorch/pytorch.git
+RUN git clone -b 'v2.0.1' --single-branch --depth 1 https://github.com/pytorch/pytorch.git
 
 WORKDIR /pytorch
 
@@ -29,8 +29,8 @@ RUN pip install -r requirements.txt
 RUN pip install pybind11
 
 # Build Pytorch for latest arch only (makes a smaller image):
-
-ENV TORCH_CUDA_ARCH_LIST="7.5+PTX"
+# 
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"
 ENV TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
 #ENV BUILD_SHARED_LIBS=OFF
 ENV DEBUG=0
@@ -42,6 +42,7 @@ ENV USE_FFMPEG=0
 ENV USE_MKL=0
 ENV USE_MKLDNN=0
 ENV USE_DISTRIBUTED=0
+ENV USE_CUPTI_SO=0
 ENV USE_IBVERBS=0
 #ENV BUILD_PYTHON=OFF
 ENV BUILD_CAFFE2=0
@@ -51,8 +52,9 @@ ENV CAFFE2_USE_CUDA=0
 ENV MAX_JOBS=64
 ENV BLAS=Eigen 
 ENV CMAKE_PREFIX_PATH="$(dirname $(which conda))/../"
+# NVFUSER?
 
-RUN pip wheel .
+RUN pip wheel --debug .
 
 # once image is built, just copy the wheel over
 CMD cp torch-*.whl /output/
