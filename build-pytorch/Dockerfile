@@ -29,8 +29,9 @@ RUN pip install -r requirements.txt
 RUN pip install pybind11
 
 # Build Pytorch for latest arch only (makes a smaller image):
-# 
-ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"
+#ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"
+# just A100, A30 only
+ENV TORCH_CUDA_ARCH_LIST="8.0"
 ENV TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
 #ENV BUILD_SHARED_LIBS=OFF
 ENV DEBUG=0
@@ -42,6 +43,7 @@ ENV USE_FFMPEG=0
 ENV USE_MKL=0
 ENV USE_MKLDNN=0
 ENV USE_DISTRIBUTED=0
+# new
 ENV USE_CUPTI_SO=0
 ENV USE_IBVERBS=0
 #ENV BUILD_PYTHON=OFF
@@ -52,9 +54,9 @@ ENV CAFFE2_USE_CUDA=0
 ENV MAX_JOBS=64
 ENV BLAS=Eigen 
 ENV CMAKE_PREFIX_PATH="$(dirname $(which conda))/../"
-# NVFUSER?
+ENV BUILD_NVFUSER=0
 
-RUN pip wheel --debug .
+RUN pip wheel -vv --debug . 2>&1 | tee compile-log
 
 # once image is built, just copy the wheel over
 CMD cp torch-*.whl /output/
