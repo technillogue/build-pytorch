@@ -45,13 +45,23 @@ ENV USE_DISTRIBUTED=0
 # new
 ENV USE_CUPTI_SO=0
 ENV USE_RCCL=0
-ENV USE_IBVERBS=0
+ENV USE_IBVERBS=0 # not consumed
 ENV USE_KINETO=0
 ENV BUILD_LIBTORCH_CPU_WITH_DEBUG=0
-
 ENV USE_NVRTC=0
+# more new 
+ENV USE_ITT=0
+ENV USE_NNPACK=0 
+ENV USE_QNNPACK=0
+ENV USE_PYTORCH_QNNPACK=0 
+ENV USE_XNNPACK=0 
+# "also sets up special cufft linkage"
+# essentially bundles cufft and cusparse, worse overall 
+# ENV ATEN_STATIC_CUDA=1
+# ENV USE_CUDA_STATIC_LINK=1
 
- #ENV BUILD_PYTHON=OFF
+
+#ENV BUILD_PYTHON=OFF
 ENV BUILD_CAFFE2=0
 ENV BUILD_CAFFE2_OPS=0
 ENV CAFFE2_USE_CUDA=0
@@ -75,21 +85,7 @@ ENV BUILD_NVFUSER=0
 
 # ENV USE_NVTX=0
 
-
-
-  # resulting config was :
-  # --   USE_ITT               : ON
-  # --   USE_NNPACK            : ON
-  # --   USE_NUMPY             : ON
-  # --   USE_OBSERVERS         : ON
-
-
-
-
-
-
-
-# RUN pip wheel -vv --debug . 2>&1 | tee compile-log
+# RUN pip wheel -vv --debug . 2>&1 | tee /output/compile-log
 
 # # once image is built, just copy the wheel over
 # CMD cp torch-*.whl /output/
