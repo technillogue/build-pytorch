@@ -22,9 +22,6 @@ COPY --from=cuda --link \
  /usr/local/cuda/lib64/libnvToolsExt.so.1 \
  /usr/local/cuda/lib64/libcufft.so.10 \
  /usr/local/cuda/lib64/libcusparse.so.11 \
- # /usr/local/cuda/lib64/libnvrtc.so* \
- # /usr/local/cuda/lib64/libcupti.so.11.8 \
- # /usr/local/cuda/lib64/libcurand.so.10 \
  /usr/local/cuda/lib64/
 COPY --from=cuda --link /usr/lib/x86_64-linux-gnu/libgomp.so.1* /usr/lib/x86_64-linux-gnu
 COPY --from=deps --link /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
