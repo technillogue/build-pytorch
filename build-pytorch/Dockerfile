@@ -91,6 +91,7 @@ ENV BUILD_NVFUSER=0
 # ENV USE_NVTX=0
 
 RUN pip wheel -vv --debug . 2>&1 | tee compile-log
+RUN apt-get install patchelf && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_cuda.so && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_global_deps.so
 
 # once image is built, just copy the wheel over
 CMD cp torch-*.whl /output/
