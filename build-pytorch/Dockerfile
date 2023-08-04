@@ -82,8 +82,19 @@ ENV BUILD_NVFUSER=1
 # ENV USE_NVTX=0
 
 RUN pip wheel -vv --debug . 2>&1 | tee compile-log
-RUN apt-get install zip patchelf && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_cuda.so && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_global_deps.so
-RUN zip -o ./torch-*.whl torch/lib/libtorch_{cuda,global_deps}.so
+RUN apt-get install -yy zip patchelf && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_cuda.so && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_global_deps.so
+#RUN zip -o ./torch-*.whl torch/lib/libtorch_{cuda,global_deps}.so
+
+RUN cp /usr/local/cuda/lib64/libcublas.so.11 \
+ /usr/local/cuda/lib64/libcublasLt.so.11 \
+ /usr/local/cuda/lib64/libcudart.so.11.0 \
+ /usr/local/cuda/lib64/libnvToolsExt.so.1 \
+ /usr/local/cuda/lib64/libcufft.so.10 \
+ /usr/local/cuda/lib64/libcusparse.so.11 \
+ /usr/lib/x86_64-linux-gnu/libgomp.so.1* \
+ torch/lib
+RUN bash -c 'zip -o ./torch-*.whl torch/lib/lib{cu{dart,blas{,Lt},fft,sparse},nvToolsExt,gomp,torch_{cuda,global_deps}}.so*'
 
 # once image is built, just copy the wheel over
 CMD cp torch-*.whl /output/
+
