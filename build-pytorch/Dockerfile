@@ -29,9 +29,9 @@ RUN pip install -r requirements.txt
 RUN pip install pybind11
 
 # Build Pytorch for latest arch only (makes a smaller image):
-#ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"
 # just A100, A30 only
-ENV TORCH_CUDA_ARCH_LIST="8.0"
+#ENV TORCH_CUDA_ARCH_LIST="8.0"
 ENV TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
 #ENV BUILD_SHARED_LIBS=OFF
 ENV DEBUG=0
@@ -74,24 +74,16 @@ ENV INTERN_DISABLE_ONNX=1
 ENV ONNX_ML=0
 
 #ENV BUILD_PYTHON=OFF
-ENV BUILD_NVFUSER=0
+ENV BUILD_NVFUSER=1
 
 # flags that no longer exist 
 # ENV USE_MKL=0
 # ENV BUILD_CAFFE2_MOBILE=0
-# # cusolver
-# ENV USE_CUSOLVER=0
-# ENV USE_CUSOLVER_64_BIT=0
-# ENV USE_CUSPARSE_CONST_DESCRIPTORS=0
-# ENV USE_CUSPARSE_GENERIC_API=0
-# ENV USE_CUSPARSE_GENERIC_SDDMM=0
-# ENV USE_CUSPARSE_GENERIC_SPSM=0
-# ENV USE_CUSPARSE_GENERIC_SPSV=0
-# ENV USE_CUSPARSE_NON_CONST_DESCRIPTORS=0
 # ENV USE_NVTX=0
 
 RUN pip wheel -vv --debug . 2>&1 | tee compile-log
-RUN apt-get install patchelf && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_cuda.so && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_global_deps.so
+RUN apt-get install zip patchelf && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_cuda.so && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_global_deps.so
+RUN zip -o ./torch-*.whl torch/lib/libtorch_{cuda,global_deps}.so
 
 # once image is built, just copy the wheel over
 CMD cp torch-*.whl /output/
