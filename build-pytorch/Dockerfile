@@ -1,5 +1,5 @@
 FROM nvidia/cuda:11.8.0-devel-ubuntu18.04
-ARG PYTHON_VERSION=3.10
+ARG PYTHON_VERSION=3.11
 ARG WITH_TORCHVISION=0
 
 # Some dependencies
@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
          software-properties-common bzip2 libffi-dev libgomp1 libssl-dev
 
 # For MKL, add mkl mkl-include
-RUN curl -L -o ~/miniconda.sh -O https://repo.continuum.io/miniconda/Miniconda3-py310_23.5.2-0-Linux-x86_64.sh && \
+RUN curl -L -o ~/miniconda.sh -O https://repo.continuum.io/miniconda/Miniconda3-py311_23.5.2-0-Linux-x86_64.sh && \
      chmod +x ~/miniconda.sh 
 RUN  ~/miniconda.sh -b -p /opt/conda && rm ~/miniconda.sh
 RUN  /opt/conda/bin/conda install -y python=$PYTHON_VERSION nomkl numpy pyyaml scipy ipython ninja cython typing && \
