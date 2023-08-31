@@ -1,5 +1,5 @@
 FROM nvidia/cuda:11.8.0-devel-ubuntu18.04
-ARG PYTHON_VERSION=3.11
+ARG PYTHON_VERSION=3.10
 ARG WITH_TORCHVISION=0
 
 # Some dependencies
@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
          software-properties-common bzip2 libffi-dev libgomp1 libssl-dev
 
 # For MKL, add mkl mkl-include
-RUN curl -L -o ~/miniconda.sh -O https://repo.continuum.io/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh && \
+RUN curl -L -o ~/miniconda.sh -O https://repo.continuum.io/miniconda/Miniconda3-py310_23.5.2-0-Linux-x86_64.sh && \
      chmod +x ~/miniconda.sh 
 RUN  ~/miniconda.sh -b -p /opt/conda && rm ~/miniconda.sh
 RUN  /opt/conda/bin/conda install -y python=$PYTHON_VERSION nomkl numpy pyyaml scipy ipython ninja cython typing && \
@@ -20,10 +20,14 @@ ENV PATH /opt/conda/bin:$PATH
 RUN apt-get remove -y libnccl-dev libnccl2 libnpp-11-0 --allow-change-held-packages
 
 # Need v1.7.1
-RUN git clone -b 'v2.0.1' --single-branch --depth 1 https://github.com/pytorch/pytorch.git
+#RUN git clone -b 'v2.0.1' --single-branch --depth 1 https://github.com/pytorch/pytorch.git
 
 WORKDIR /pytorch
-
+# 2023-08-16 nightly release
+RUN git init \ 
+ && git remote add origin https://github.com/pytorch/pytorch.git \
+ && git fetch --depth 1 origin 3af011b858f5e5c40fd8e9d41fa7f31a928b3b47 \
+ && git checkout 3af011b858f5e5c40fd8e9d41fa7f31a928b3b47
 RUN git submodule update --init --recursive
 RUN pip install -r requirements.txt
 RUN pip install pybind11
@@ -31,17 +35,18 @@ RUN pip install pybind11
 # Build Pytorch for latest arch only (makes a smaller image):
 ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"
 # just A100, A30 only
+# L40: 8.9, H100: 9.0
 #ENV TORCH_CUDA_ARCH_LIST="8.0"
 ENV TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
 #ENV BUILD_SHARED_LIBS=OFF
 ENV DEBUG=0
 ENV USE_CUDNN=0
 ENV USE_OPENCV=0
-ENV USE_NCCL=0
+ENV USE_NCCL=1
 ENV BUILD_TEST=0
 ENV USE_FFMPEG=0
 ENV USE_MKLDNN=0
-ENV USE_DISTRIBUTED=0
+ENV USE_DISTRIBUTED=1
 ENV BUILD_CAFFE2=0
 ENV BUILD_CAFFE2_OPS=0
 ENV CAFFE2_USE_CUDA=0
@@ -80,7 +85,9 @@ ENV BUILD_NVFUSER=0
 # ENV USE_MKL=0
 # ENV BUILD_CAFFE2_MOBILE=0
 # ENV USE_NVTX=0
-
+# RUN pip install magic-wormhole && apt-get install -yy zip patchelf
+# COPY ./build.sh /build.sh
+# ENTRYPOINT ["/bin/bash", "/build.sh"]
 RUN pip wheel -vv --debug . 2>&1 | tee compile-log
 RUN apt-get install -yy zip patchelf && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_cuda.so && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_global_deps.so
 #RUN zip -o ./torch-*.whl torch/lib/libtorch_{cuda,global_deps}.so
@@ -97,4 +104,3 @@ RUN bash -c 'zip -o ./torch-*.whl torch/lib/lib{cu{dart,blas{,Lt},fft,sparse},nv
 
 # once image is built, just copy the wheel over
 CMD cp torch-*.whl /output/
-
