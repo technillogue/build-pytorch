@@ -1,7 +1,7 @@
-FROM nvidia/cuda:11.8.0-devel-ubuntu18.04
+FROM nvidia/cuda:12.1.0-devel-ubuntu20.04
 ARG PYTHON_VERSION=3.11
 ARG WITH_TORCHVISION=0
-
+ENV DEBIAN_FRONTEND=noninteractive
 # Some dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
          build-essential cmake git curl ca-certificates \
@@ -19,21 +19,20 @@ ENV PATH /opt/conda/bin:$PATH
 # Remove nccl, etc. need cufft, cublas, curand, cusolver
 RUN apt-get remove -y libnccl-dev libnccl2 libnpp-11-0 --allow-change-held-packages
 
-# Need v1.7.1
-#RUN git clone -b 'v2.0.1' --single-branch --depth 1 https://github.com/pytorch/pytorch.git
 
+RUN git clone -b 'v2.1.0' --single-branch --depth 1 https://github.com/pytorch/pytorch.git
 WORKDIR /pytorch
-# 2023-08-16 nightly release
-RUN git init \ 
- && git remote add origin https://github.com/pytorch/pytorch.git \
- && git fetch --depth 1 origin 3af011b858f5e5c40fd8e9d41fa7f31a928b3b47 \
- && git checkout 3af011b858f5e5c40fd8e9d41fa7f31a928b3b47
+# # 2023-08-16 nightly release
+# RUN git init \ 
+#  && git remote add origin https://github.com/pytorch/pytorch.git \
+#  && git fetch --depth 1 origin 3af011b858f5e5c40fd8e9d41fa7f31a928b3b47 \
+#  && git checkout 3af011b858f5e5c40fd8e9d41fa7f31a928b3b47
 RUN git submodule update --init --recursive
 RUN pip install -r requirements.txt
 RUN pip install pybind11
 
 # Build Pytorch for latest arch only (makes a smaller image):
-ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"
+ENV TORCH_CUDA_ARCH_LIST="8.0;8.6"
 # just A100, A30 only
 # L40: 8.9, H100: 9.0
 #ENV TORCH_CUDA_ARCH_LIST="8.0"
@@ -92,15 +91,15 @@ RUN pip wheel -vv --debug . 2>&1 | tee compile-log
 RUN apt-get install -yy zip patchelf && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_cuda.so && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_global_deps.so
 #RUN zip -o ./torch-*.whl torch/lib/libtorch_{cuda,global_deps}.so
 
-RUN cp /usr/local/cuda/lib64/libcublas.so.11 \
- /usr/local/cuda/lib64/libcublasLt.so.11 \
- /usr/local/cuda/lib64/libcudart.so.11.0 \
- /usr/local/cuda/lib64/libnvToolsExt.so.1 \
- /usr/local/cuda/lib64/libcufft.so.10 \
- /usr/local/cuda/lib64/libcusparse.so.11 \
+RUN cp /usr/local/cuda/lib64/libcublas.so.12 \
+ /usr/local/cuda/lib64/libcublasLt.so* \
+ /usr/local/cuda/lib64/libcudart.so.12* \
+ /usr/local/cuda/lib64/libnvToolsExt.so.1* \
+ /usr/local/cuda/lib64/libcufft.so.11* \
+ /usr/local/cuda/lib64/libcusparse.so* \
  /usr/lib/x86_64-linux-gnu/libgomp.so.1* \
  torch/lib
-RUN bash -c 'zip -o ./torch-*.whl torch/lib/lib{cu{dart,blas{,Lt},fft,sparse},nvToolsExt,gomp,torch_{cuda,global_deps}}.so*'
+RUN bash -c 'zip -8 -o ./torch-*.whl torch/lib/lib{cu{dart,blas{,Lt},fft,sparse},nvToolsExt,gomp,torch_{cuda,global_deps}}.so*'
 
 # once image is built, just copy the wheel over
 CMD cp torch-*.whl /output/
