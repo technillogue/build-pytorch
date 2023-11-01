@@ -79,7 +79,9 @@ ENV ONNX_ML=0
 
 #ENV BUILD_PYTHON=OFF
 ENV BUILD_NVFUSER=0
-
+# this makes sure the git hash isn't part of the version
+ENV PYTORCH_BUILD_VERSION="2.1.0"
+ENV PYTORCH_BUILD_NUMBER=0
 # flags that no longer exist 
 # ENV USE_MKL=0
 # ENV BUILD_CAFFE2_MOBILE=0
@@ -91,15 +93,18 @@ RUN pip wheel -vv --debug . 2>&1 | tee compile-log
 RUN apt-get install -yy zip patchelf && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_cuda.so && patchelf --remove-needed libcurand.so.10 torch/lib/libtorch_global_deps.so
 #RUN zip -o ./torch-*.whl torch/lib/libtorch_{cuda,global_deps}.so
 
-RUN cp  --preserve=links /usr/local/cuda/lib64/libcublas.so.12 \
- /usr/local/cuda/lib64/libcublasLt.so* \
- /usr/local/cuda/lib64/libcudart.so.12* \
- /usr/local/cuda/lib64/libnvToolsExt.so.1* \
- /usr/local/cuda/lib64/libcufft.so.11* \
- /usr/local/cuda/lib64/libcusparse.so* \
- /usr/lib/x86_64-linux-gnu/libgomp.so.1* \
+# nvrtc is unfortunately required by mlc/tvm even though there shouldn't be any runtime compilation irl
+RUN cp /usr/local/cuda/lib64/libcublas.so.12 \
+ /usr/local/cuda/lib64/libcublasLt.so.12 \
+ /usr/local/cuda/lib64/libcudart.so.12 \
+ /usr/local/cuda/lib64/libnvToolsExt.so.1 \
+ /usr/local/cuda/lib64/libnvrtc.so.12 \
+ /usr/local/cuda/lib64/libcufft.so.11 \
+ /usr/local/cuda/lib64/libcusparse.so.12 \
+ /usr/local/cuda/lib64/libnvJitLink.so.12 \
+ /usr/lib/x86_64-linux-gnu/libgomp.so.1 \
  torch/lib
-RUN bash -c 'zip --symlinks -8 -o ./torch-*.whl torch/lib/lib{cu{dart,blas{,Lt},fft,sparse},nvToolsExt,gomp,torch_{cuda,global_deps}}.so*'
+RUN bash -c 'zip -8 -o ./torch-*.whl torch/lib/lib{cu{dart,blas{,Lt},fft,sparse},nv{rtc,ToolsExt,JitLink},gomp,torch_{cuda,global_deps}}.so*'
 
 # once image is built, just copy the wheel over
 CMD cp torch-*.whl /output/
